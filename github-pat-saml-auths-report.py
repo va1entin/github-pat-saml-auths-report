@@ -36,7 +36,7 @@ def get_token():
         sys.exit(1)
     return token
 
-def make_request(endpoint, token=get_token(), custom_headers=None):
+def make_request(endpoint, token=get_token(), custom_headers=None, params=None):
     headers = {"Accept": "application/vnd.github+json",  "X-GitHub-Api-Version": "2022-11-28"}
     url = f'{API_BASE}{endpoint}'
     if token:
@@ -47,7 +47,7 @@ def make_request(endpoint, token=get_token(), custom_headers=None):
     all_results = []
     while url:
         try:
-            response = requests.get(url, headers=headers)
+            response = requests.get(url, headers=headers, params=params)
             while response.status_code == 403:
                 # handle rate limit
                 remaining = int(response.headers.get('X-RateLimit-Remaining', 0))
@@ -68,20 +68,13 @@ def make_request(endpoint, token=get_token(), custom_headers=None):
                 return response.json()
             # if response is a list, extend all_results with it and see if there's a next page
             all_results.extend(response.json())
-            link_header = response.headers.get('Link')
-            if link_header is None:
+            if 'next' in response.links:
+                url = response.links['next']['url']
+                current_page = re.match(r'.*page=(\d+)', url).group(1)
+                last_page = re.match(r'.*page=(\d+)', response.links['last']['url']).group(1) if 'last' in response.links else current_page
+                print(f'\r  {current_page}/{last_page} pages with max 100 SAML authorizations for PATs each in org parsed for checking...', end='')
+            else:
                 break
-            links = link_header.split(', ')
-            url = None
-            for link in links:
-                if 'rel="last"' in link:
-                    last_page = re.match(r'.*page=([0-9]+)', link).group(1)
-            for link in links:
-                if 'rel="next"' in link:
-                    url = link[link.index('<') + 1:link.index('>')]
-                    #print(url)
-                    current_page = re.match(r'.*page=(\d+)', url).group(1)
-                    print(f'\r  {current_page}/{last_page} pages with max 100 SAML authorizations for PATs each in org parsed for checking...', end='')
         except requests.exceptions.RequestException as e:
             print(f'Error occurred while making the request: {e}')
             sys.exit(1)
@@ -97,7 +90,7 @@ def get_orgs():
     return orgs
 
 def get_saml_authorizations(org):
-    response = make_request(f'/orgs/{org}/credential-authorizations')
+    response = make_request(f'/orgs/{org}/credential-authorizations', params={'per_page': 100})
     pat_saml_authorizations = []
     for saml_authorization in response:
         if saml_authorization['credential_type'] == 'personal access token':
