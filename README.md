@@ -1,6 +1,7 @@
 # github-pat-saml-auths-report
 
-This Python script checks all or selected orgs that you have access to for PATs with [SAML authorization](https://docs.github.com/en/enterprise-cloud@latest/rest/orgs/orgs?apiVersion=2022-11-28#list-saml-sso-authorizations-for-an-organization) in them and generates a JSON report with such tokens sorted by org.
+This Python script checks all or selected orgs that you have access to for *classic* PATs with [SAML authorization](https://docs.github.com/en/enterprise-cloud@latest/rest/orgs/orgs?apiVersion=2022-11-28#list-saml-sso-authorizations-for-an-organization) in them and generates a JSON report with such tokens sorted by org.
+It does **not** include fine-grained tokens. There is a separate [API endpoint](https://docs.github.com/en/rest/orgs/personal-access-tokens?apiVersion=2022-11-28#list-fine-grained-personal-access-tokens-with-access-to-organization-resources) and [UI](https://docs.github.com/en/organizations/managing-programmatic-access-to-your-organization/reviewing-and-revoking-personal-access-tokens-in-your-organization#reviewing-and-revoking--fine-grained-personal-access-tokens) for those.
 
 ## Requirements
 
@@ -16,13 +17,13 @@ This Python script checks all or selected orgs that you have access to for PATs 
 ```bash
 export GITHUB_PAT_SAML_AUTHS_REPORT_TOKEN="<your token>"
 
-# Check all orgs that the token can access
+# Get classic PATs with SAML authorization from all orgs that the token can access
 python3 github-pat-saml-auths-report.py
 # OR
 # Check specific org(s)
 python3 github-pat-saml-auths-report.py -o org1 org2 org3
 
-# OPTIONAL, get only PATs with SAML authorization in org2 from report
+# OPTIONAL, get only classic PATs with SAML authorization in org2 from report
 cat github_orgs_saml_auths_YYYY-MM-DD_HH-MM-SS.json | jq '.org2'
 ```
 
